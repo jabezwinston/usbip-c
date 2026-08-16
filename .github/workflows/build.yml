@@ -1,0 +1,42 @@
+name: build
+
+# Compile everything the documentation promises: all examples (including the programs
+# the guide pages @include verbatim, under doc/examples/), both role libraries, the
+# drop-in wrappers, and the header syntax checks.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5   # scripts/gen_exports.py renders the export lists
+        with:
+          python-version: '3.x'
+      - name: Build (examples + libraries + libusb drop-in)
+        run: make
+      - name: Header + ABI checks
+        run: make check
+
+  windows-cross:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install the mingw-w64 cross toolchains
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gcc-mingw-w64-i686 gcc-mingw-w64-x86-64
+      # both architectures ship in the release archive, so both are built here
+      - name: Cross-build for Windows, 32- and 64-bit
+        run: |
+          make OS=Windows_NT CROSS_COMPILE=i686-w64-mingw32-   BUILD_DIR=build-x86
+          make OS=Windows_NT CROSS_COMPILE=x86_64-w64-mingw32- BUILD_DIR=build-x64

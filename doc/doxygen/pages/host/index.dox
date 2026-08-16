@@ -1,0 +1,20 @@
+/**
+ * @page host_guide Host
+ *
+ * The **host side** drives a USB device instead of being one. It talks USB/IP
+ * itself, so it needs **no kernel driver, no `vhci` and no root** - serve a device
+ * in one process and drive it from another, on any OS. The device can be virtual
+ * (either library) or genuine hardware exported by a real `usbipd`.
+ *
+ * Three ways in, from most to least code you write:
+ *
+ * - @subpage host_api - the native libusb-shaped API: open a device, run
+ *   control/bulk/interrupt/iso transfers.
+ * - @subpage host_pyusb - code already written against pyusb drives a virtual
+ *   device by loading the libusb wrapper as its backend.
+ * - @subpage wrappers - an already-compiled binary (`dfu-util`, `lsusb`, a WinUSB
+ *   app) runs unmodified against a virtual device.
+ *
+ * In USB/IP terms this side is the **client** (@ref roles "role table") - something
+ * must already be serving before any host call can succeed.
+ */

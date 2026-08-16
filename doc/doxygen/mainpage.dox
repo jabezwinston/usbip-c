@@ -1,0 +1,35 @@
+/**
+ * @mainpage Overview
+ *
+ * The **USBIP C library** lets you create *virtual USB devices* and write *host
+ * drivers* for them - in software, with no hardware. USB/IP is the transport
+ * underneath, but it stays out of the way: the API vocabulary is pure USB (device,
+ * interface, endpoint, descriptor, transfer) and the transport is **local by
+ * default**, named only when you go remote.
+ *
+ * This is the reference and guide for the **C library** (`include/`). A
+ * byte-compatible **Python library** is documented on its own
+ * <a href="https://jabezwinston.github.io/usbip-python/">MkDocs site</a>; both
+ * speak the same USB/IP wire protocol,
+ * so a C device can be driven by a Python host and vice-versa.
+ *
+ * @anchor roles
+ * USB/IP inverts the everyday words: the side that **provides** the device is the
+ * USB/IP **server**, and the side that **uses** it is the USB/IP **client**.
+ *
+ * Your side                                   | USB role | USB/IP role | Socket
+ * ------------------------------------------- | -------- | ----------- | -----------------
+ * a program on the @ref device "device API"    | device   | **server**  | listens on TCP 3240
+ * a @ref clients "USB/IP client" (the OS's own importer) | host | **client** | connects
+ * a program on the @ref host "host API"        | host     | **client**  | connects
+ *
+ *
+ * - @subpage getting_started - install, build, and your first device
+ * - @subpage usb_concepts - the USB vocabulary the API uses
+ * - @subpage device_guide - be a device: one recipe per class, vendor/WebUSB, composites
+ * - @subpage host_guide - drive a device: host API, pyusb, wrappers
+ * - @subpage clients - importing it on Linux, Windows, macOS or embedded hardware
+ * - @subpage tools - environment variables, capture, debugging, going remote
+ *
+ * Copyright (C) 2026 Jabez Winston - SPDX-License-Identifier: MIT
+ */

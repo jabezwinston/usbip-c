@@ -1,0 +1,29 @@
+/**
+ * @page usb_classes USB Classes
+ *
+ * A **device class** is a ready-made, host-recognised function: it owns the
+ * descriptors and the class protocol, so your code supplies only behaviour through
+ * callbacks. Every class follows the same three steps - usbip_device_create() a
+ * device, `*_add()` the class, usbip_device_plug() it. Writing your own class uses
+ * the same public API (see @ref usb_class "the class layer").
+ *
+ * Class      | Header                | Reference
+ * ---------- | --------------------- | ---------------
+ * HID        | `classes/hid.h`       | @ref class_hid
+ * CDC-ACM    | `classes/cdc_acm.h`   | @ref class_cdc
+ * MSC        | `classes/msc.h`       | @ref class_msc
+ * MTP        | `classes/mtp.h`       | @ref class_mtp
+ * UAC        | `classes/uac.h`       | @ref class_uac
+ * UVC        | `classes/uvc.h`       | @ref class_uvc
+ * DFU        | `classes/dfu.h`       | @ref class_dfu
+ * Bluetooth  | `classes/bluetooth.h` | @ref class_bt
+ *
+ * Each reference page documents the class's `*_opts` struct, its entry point and
+ * every callback it can hand you. Every class but Bluetooth also has a runnable
+ * program under `examples/device/`, and @ref cl_linux / @ref cl_windows tabulate what
+ * each class turns into once a host imports it.
+ *
+ * Not everything ships as a class: @ref dev_vendor covers vendor-specific and WebUSB
+ * devices built on the core alone, and
+ * @ref dev_composite covers putting several functions on one device.
+ */

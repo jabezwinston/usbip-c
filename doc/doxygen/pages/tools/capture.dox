@@ -1,0 +1,29 @@
+/**
+ * @page tool_capture Capturing traffic
+ *
+ * `USBIP_PCAPNG` records every transfer to a PCAPNG that Wireshark opens with its usual
+ * USB and class dissectors. No code, no rebuild, and it works on both sides of the
+ * wire - set it on the server to capture what the device sees, on the client to
+ * capture what the importer sent:
+ *
+ * @htmlonly[block]<div class="lang-sh"></div>@endhtmlonly
+ * @code{.sh}
+ * # Linux / macOS
+ * USBIP_PCAPNG=traffic.pcapng ./boot_keyboard        # an explicit file name
+ * USBIP_PCAPNG=1 ./boot_keyboard                     # auto-name: ./boot_keyboard.pcapng
+ * USBIP_PCAPNG=cap-%p.pcapng ./boot_keyboard         # %p expands to the process id
+ * @endcode
+ *
+ * On Windows, `cmd` has no `VAR=value` prefix - set it first, one `set` per line:
+ *
+ * @htmlonly[block]<div class="lang-sh"></div>@endhtmlonly
+ * @code{.sh}
+ * set USBIP_PCAPNG=traffic.pcapng
+ * boot_keyboard.exe
+ * @endcode
+ *
+ * The file is created in the **current directory** unless the value is a path.
+ * `1`, `on`, `yes`, `true`, `auto` and an empty value all mean "auto-name after the
+ * executable". Either side records each transfer as what it is - control, bulk,
+ * interrupt or isochronous.
+ */

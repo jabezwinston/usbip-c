@@ -1,0 +1,95 @@
+/**
+ * @file modules.dox
+ * @brief API category (module) definitions for the USBIP C library.
+ *
+ * Defines the @c \@defgroup tree that the headers attach their declarations to,
+ * so the generated docs group the API by topic - like the libusb 1.0 API page.
+ * Each public header opens an @c \@addtogroup block keyed to one of these IDs.
+ */
+
+/**
+ * @defgroup transport USB/IP transport
+ * @brief The wire under every host/device call.
+ *
+ * Only this module knows about USB/IP. Every host and device entry point takes an
+ * optional ::usb_transport *; @c NULL selects the default local transport, and
+ * usbip_transport() serves or connects over TCP. The device side **listens** on the
+ * handle and the host side **connects** to it (@ref roles "roles").
+ */
+
+/**
+ * @defgroup device Device core API
+ * @brief Build a virtual USB device from typed descriptors.
+ *
+ * Create a ::usbip_device, append descriptors (usbip_device_add_descriptor() /
+ * usbip_device_add_endpoint()), register control and data callbacks, then
+ * usbip_device_plug() it onto a transport - the program becomes the USB/IP
+ * **server** (@ref roles "roles"). Data moves through ::usbip_ep pipes with
+ * usbip_device_read() / usbip_device_write(). The core knows only descriptors and
+ * requests and links on its own as @c libusbip-device; composition lives in
+ * @ref usb_class "the class layer".
+ */
+
+/**
+ * @defgroup usb_class Class layer
+ * @brief Functions, interfaces, and the ::usbip_device_class vtable.
+ *
+ * Composes a device out of ::usbip_function functions, each owning one or more
+ * ::usbip_interface interfaces. Instantiate a reusable class with
+ * usbip_device_add_class() or author a bare function with
+ * usbip_device_add_function(). The layer sits on the @ref device "device core", which
+ * knows nothing about it.
+ */
+
+/**
+ * @defgroup host Host API
+ * @brief Drive USB devices - deliberately libusb-shaped.
+ *
+ * Initialise a ::usbip_host_context, optionally bind a transport with
+ * usbip_host_set_transport(), enumerate, open a device and run control / bulk /
+ * interrupt / isochronous transfers - against a virtual device or a real @c usbipd.
+ * The program is the USB/IP **client** (@ref roles "roles"); porting libusb code is
+ * essentially @c s/libusb_/usbip_host_/.
+ */
+
+/**
+ * @defgroup desc USB descriptors & types
+ * @brief Shared, role-neutral USB types used by both host and device.
+ *
+ * Standard descriptor structs (device / configuration / interface / endpoint),
+ * the 8-byte SETUP packet, and the direction / transfer-type / speed enums.
+ */
+
+/**
+ * @defgroup errors Error codes
+ * @brief Return codes shared across the library.
+ *
+ * The @c USB_* error codes use the same numeric values as libusb so ported
+ * constants keep working; usb_strerror() renders them as text.
+ */
+
+/**
+ * @defgroup classes Device classes
+ * @brief Ready-made, reusable USB device classes.
+ *
+ * Each class presents a complete, host-recognised function. Instantiate one with
+ * usbip_device_add_class(), or use the class's own @c *_add() helper; @ref usb_classes
+ * lists them all.
+ */
+
+/** @defgroup class_hid HID - Human Interface Device
+ *  @ingroup classes */
+/** @defgroup class_cdc CDC-ACM - Virtual serial port
+ *  @ingroup classes */
+/** @defgroup class_msc MSC - Mass storage (SCSI/BOT)
+ *  @ingroup classes */
+/** @defgroup class_mtp MTP - Media Transfer Protocol
+ *  @ingroup classes */
+/** @defgroup class_uac UAC - USB Audio Class 1.0
+ *  @ingroup classes */
+/** @defgroup class_uvc UVC - USB Video Class (webcam)
+ *  @ingroup classes */
+/** @defgroup class_dfu DFU - Device Firmware Upgrade
+ *  @ingroup classes */
+/** @defgroup class_bt  Bluetooth - HCI transport
+ *  @ingroup classes */

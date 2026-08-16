@@ -1,0 +1,40 @@
+# Exported symbols of libusbip-device - everything declared in the public
+# usbip.h + usbip-device.h, nothing else. scripts/gen_exports.py turns this
+# into a version script (.map), module definition (.def) or export list (.sym).
+usb_strerror
+usbip_transport
+usbip_loopback
+usbip_transport_free
+usbip_device_create
+usbip_device_set_strings
+usbip_device_set_class
+usbip_device_set_bcd_device
+usbip_device_set_speed
+usbip_device_get_speed
+usbip_device_add_string
+usbip_device_set_composite
+usbip_device_is_composite
+usbip_device_enable_winusb
+usbip_device_enable_msos
+usbip_device_enable_msos_group
+usbip_device_enable_webusb
+usbip_device_set_iso_pacing
+usbip_device_add_descriptor
+usbip_device_add_endpoint
+usbip_device_reserve_endpoint
+usbip_device_get_num_interfaces
+usbip_device_set_interface_string
+usbip_device_on_control
+usbip_device_on_set_alt
+usbip_device_group_begin
+usbip_device_group_abort
+usbip_ep_on_out
+usbip_ep_on_iso
+usbip_ep_stall
+usbip_endpoint_address
+usbip_device_read
+usbip_device_write
+usbip_device_plug
+usbip_device_unplug
+usbip_device_set_busid
+usbip_device_get_busid

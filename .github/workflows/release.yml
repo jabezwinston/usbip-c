@@ -1,0 +1,49 @@
+name: release
+
+# Windows binaries, cross-built with mingw-w64 and attached to a GitHub Release,
+# so the documentation's "download a release" instructions have something to
+# point at:
+#   libusbip-<version>-windows.zip           32- and 64-bit in one archive
+#
+# What goes in it, how it is laid out and what is checked all live in
+# scripts/package-windows.sh - run that yourself and you get the same archive.
+# This file only supplies the toolchains and does the publishing.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:      # build the archive without tagging (artifact only)
+
+permissions:
+  contents: write         # needed to create the release
+
+jobs:
+  package:
+    runs-on: ubuntu-latest      # cross-build: mingw-w64 targets Windows from Linux
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5   # scripts/gen_exports.py renders the export lists
+        with:
+          python-version: '3.x'
+
+      - name: Install the mingw-w64 cross toolchains
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 zip
+
+      - name: Build, package and check
+        run: scripts/package-windows.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libusbip-windows
+          path: dist/*.zip
+          if-no-files-found: error
+
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: dist/*.zip
+          generate_release_notes: true

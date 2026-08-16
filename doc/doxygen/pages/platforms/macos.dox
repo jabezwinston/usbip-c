@@ -1,0 +1,52 @@
+/**
+ * @page cl_macos macOS
+ *
+ * macOS has **no in-box USB/IP client**, and no vhci equivalent to install. One
+ * experimental third-party client exists, but it only runs with System Integrity
+ * Protection turned off - so on a stock Mac the practical way to get a virtual device
+ * into the USB stack is a @ref cl_hw "hardware client": a board that imports the device
+ * over WiFi and re-presents it on its own USB-OTG port, so the Mac it plugs into sees an
+ * ordinary USB device and binds its own in-box driver. Nothing is installed on the Mac,
+ * no kernel extension, no SIP change.
+ *
+ * Option | Works today | Cost
+ * -------|-------------|------
+ * @ref cl_hw "Hardware client" (**recommended**) | yes | a $6 board; the Mac sees plain USB
+ * [carlossless/usbip-macos](https://github.com/carlossless/usbip-macos)` | experimental | SIP must be disabled
+ * Serve from macOS | yes | the *other* machine gets the device
+ * Drive from code (@ref host_api) | yes | no USB stack involvement
+ *
+ * [carlossless/usbip-macos](https://github.com/carlossless/usbip-macos) is the client
+ * itself, written in Rust. It creates the virtual controller through Apple's
+ * `IOUSBHostControllerInterface` rather than a kext, and its author calls it "highly
+ * experimental - just enough working to work my current usecases": expect gaps against
+ * the wire protocol this library implements, and test before relying on it. Build it with cargo, then attach by busid or by VID:PID:
+ *
+ * @htmlonly[block]<div class="lang-sh"></div>@endhtmlonly
+ * @code{.sh}
+ * cargo build --release
+ * sudo ./target/release/usbip-macos -r 192.168.0.5 list
+ * sudo ./target/release/usbip-macos -r 192.168.0.5 attach --busid 1-1
+ * sudo ./target/release/usbip-macos -r 192.168.0.5 attach --vendor_id 0x1209 --product_id 0x0001
+ * @endcode
+ *
+ * `-p/--tcp-port` selects a non-default port; the process stays in the foreground for the
+ * lifetime of the device, and detaching means stopping it. Serve on `0.0.0.0` so the Mac
+ * can reach you (@ref tool_remote).
+ *
+ * @warning It needs SIP disabled. `IOUSBHostControllerInterface` is gated behind the
+ * `com.apple.developer.usb.host-controller-interface` entitlement, which Apple grants only
+ * on request. Without it the process must run as **root on a Mac with System Integrity
+ * Protection turned off** (`csrutil disable` from Recovery), which lowers the security
+ * posture of the whole machine - do that on a scratch Mac or a VM, not a daily driver.
+ * Prefer the @ref cl_hw "Hardware client" if you can.
+ *
+ * Whichever way the Mac imports, it can also go the other direction: the device libraries
+ * build and run there (`libusbip-device.0.dylib`), so a Mac can **serve** a device for a
+ * Linux or Windows machine to import over the network. And it can **drive** one with no
+ * client and no kernel support at all - the @ref host_api "host API" speaks USB/IP itself,
+ * and existing libusb programs reach a served device through the
+ * @ref wrappers "libusb-1.0 wrapper". Neither touches the macOS USB stack, so neither
+ * needs SIP disabled.
+ *
+ */

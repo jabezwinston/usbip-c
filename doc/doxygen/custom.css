@@ -1,0 +1,196 @@
+/* Overrides on top of the stock Doxygen stylesheet (HTML_EXTRA_STYLESHEET).
+ *
+ * Loaded after tabs.css, navtree.css, search/search.css and doxygen.css, so plain
+ * selectors of equal specificity win without !important.
+ *
+ * The theme is sized for a 14px body, which reads small on a modern display - and
+ * its code listings are smaller still. Everything below scales the site up by
+ * roughly 1.07x, keeping the stock proportions: the many percentage-based rules
+ * cascade from the body size on their own, so only the rules that hard-code px or
+ * pt are restated here. Sizes are given as "stock -> new" so the scale stays
+ * checkable against a future Doxygen's stylesheet.
+ */
+
+/* ---------------------------------------------------------------------------
+ * Body text - the anchor every percentage-based rule in the theme derives from
+ * ------------------------------------------------------------------------- */
+body, table, div, p, dl {			/* 14px -> 15px */
+	font-size: 15px;
+}
+
+.title {					/* 14px -> 15px */
+	font-size: 15px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Code
+ *
+ * @code and @include render as div.fragment > div.line, which the theme pins at
+ * 13px - and a monospace face reads optically smaller than a proportional one at
+ * the same pixel size, so listings came out well below the prose. Size them with
+ * the body rather than under it, and open up the leading a little, which is what
+ * makes a multi-line listing scannable.
+ * ------------------------------------------------------------------------- */
+div.fragment div.line {				/* 13px -> 15px */
+	font-size: 15px;
+	min-height: 15px;
+	line-height: 1.4;
+}
+
+/* The other listing form (verbatim blocks); keep the two identical rather than
+ * 15px vs the theme's 105%. */
+pre.fragment {					/* 105% -> 15px */
+	font-size: 15px;
+	line-height: 1.4;
+}
+
+/* Room for the lines inside the box, and a clearer break from the surrounding
+ * paragraphs. */
+div.fragment,
+pre.fragment {
+	padding: 6px 9px;
+	margin: 8px 8px 8px 0;
+	border-radius: 4px;
+}
+
+/* The theme's own bottom-padding hack for the last line's underline; the
+ * padding above replaces it. */
+div.fragment {
+	padding-bottom: 6px;
+}
+
+/* Inline `code` spans in prose get no size of their own from the theme, so they
+ * fall back to the browser's monospace default (~13px) and shrink mid-sentence.
+ * Match the surrounding text and set them off with a light chip instead. */
+p code,
+li code,
+td code,
+dd code,
+h1 code, h2 code, h3 code, h4 code {
+	font-family: 'JetBrains Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace, fixed;
+	font-size: 93%;
+	background-color: #F4F6FA;
+	border: 1px solid #E1E7F2;
+	border-radius: 3px;
+	padding: 0 3px;
+}
+
+/* The marker a shell block is preceded by, so shell_highlight.js can find it.
+ * It carries no content and must never occupy space - with JavaScript off it is
+ * the only trace of the mechanism, and the code below it still reads correctly,
+ * just uncoloured. */
+div.lang-sh {
+	display: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * Navigation chrome
+ * ------------------------------------------------------------------------- */
+
+/* Sidebar tree. The .label rule uses the `font:` shorthand, which is why it
+ * overrides #nav-tree's own size and has to be restated here. */
+#nav-tree {					/* 14px -> 15px */
+	font-size: 15px;
+}
+
+#nav-tree .label {				/* 12px -> 13px */
+	font-size: 13px;
+}
+
+/* Top tab bar and its drop-downs. The 36px line-height the theme pairs with the
+ * tab_b.png strip still clears the larger text, so only the size changes. */
+.sm-dox a,
+.sm-dox a:focus,
+.sm-dox a:hover,
+.sm-dox a:active {				/* 13px -> 14px */
+	font-size: 14px;
+}
+
+.sm-dox ul a,
+.sm-dox ul a:focus,
+.sm-dox ul a:hover,
+.sm-dox ul a:active {				/* 12px -> 13px */
+	font-size: 13px;
+}
+
+.tabsearch {					/* 13px -> 14px */
+	font-size: 14px;
+}
+
+/* Breadcrumb strip. Its height and line-height are hard-coded to match the text,
+ * so they scale with it. */
+.navpath ul {					/* 11px -> 12px */
+	font-size: 12px;
+	height: 32px;
+	line-height: 32px;
+}
+
+.navpath li.footer {				/* 8pt -> 8.5pt */
+	font-size: 8.5pt;
+}
+
+/* ---------------------------------------------------------------------------
+ * Page furniture
+ * ------------------------------------------------------------------------- */
+div.summary {					/* 8pt -> 8.5pt */
+	font-size: 8.5pt;
+}
+
+div.ingroups {					/* 8pt -> 8.5pt */
+	font-size: 8.5pt;
+}
+
+span.mlabel {					/* 7pt -> 7.5pt */
+	font-size: 7.5pt;
+}
+
+.directory .levels {				/* 9pt -> 9.5pt */
+	font-size: 9.5pt;
+}
+
+/* The +/- dynamic-section toggle; its box is sized to the glyph. */
+.icon {						/* 12px -> 13px */
+	font-size: 13px;
+	height: 15px;
+	width: 17px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Search results panel
+ * ------------------------------------------------------------------------- */
+.SREntry {					/* 10pt -> 10.5pt */
+	font-size: 10.5pt;
+}
+
+.SRPage .SREntry,
+a.SRScope,
+.SRPage .SRStatus {				/* 8pt -> 8.5pt */
+	font-size: 8.5pt;
+}
+
+/* ---------------------------------------------------------------------------
+ * Tooltips
+ *
+ * Deliberately kept below the body size - they are a glance, not a read.
+ * ------------------------------------------------------------------------- */
+#powerTip div {					/* 12px -> 12px */
+	font-size: 12px;
+}
+
+/* Tooltips reuse .fragment markup, so they need holding back from the listing
+ * size set above. */
+div.ttc div.line {
+	font-size: 12px;
+	min-height: 12px;
+	line-height: 1.3;
+}
+
+/* ---------------------------------------------------------------------------
+ * Figures
+ *
+ * doxygen.css centres @image blocks; align them with the prose instead, so a
+ * screenshot starts on the same left margin as the paragraph introducing it.
+ * ------------------------------------------------------------------------- */
+.image {
+	text-align: left;
+}

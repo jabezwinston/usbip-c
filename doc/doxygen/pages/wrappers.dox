@@ -1,0 +1,43 @@
+/**
+ * @page wrappers Wrappers
+ *
+ * Programs already written against **libusb** or **libusbK** need no porting. The
+ * repository builds a wrapper library for each - ABI- and symbol-compatible with the
+ * real one, implemented on the same USB/IP client primitives the @ref host_api "host API"
+ * uses - so an already-compiled binary drives a virtual @ref device "device" unmodified:
+ * no kernel module, no root, no `vhci`, no source change.
+ *
+ * Wrapper               | Artifact                             | Runs on               | Loaded by
+ * --------------------- | ------------------------------------ | --------------------- | -----------------------------------------------
+ * @ref md_wrapper_2libusb-1_80_2README "libusb-1.0" | `libusb-1.0.so.0` / `libusb-1.0.dll` | Linux, macOS, Windows | `lsusb`, `dfu-util`, @ref host_pyusb "pyusb", anything built against `<libusb.h>`
+ * @ref md_wrapper_2libusbK_2README "libusbK"        | `libusbK.dll`                        | Windows      | libusbK and **WinUSB**-API programs (`UsbK_*`, `WinUsb_*`)
+ *
+ * The libusb wrapper implements the synchronous *and* asynchronous APIs -
+ * `libusb_submit_transfer` + `libusb_handle_events` + callbacks over a worker thread -
+ * plus parsed configuration descriptors and string descriptors, with no non-libusb
+ * exported symbols. Substitute it for the system libusb and the real `dfu-util` flashes
+ * a virtual DFU device.
+ *
+ * The libusbK wrapper is the Windows sibling, with undecorated `__stdcall` exports, so
+ * `GetProcAddress` and `LibK_LoadDriverAPI` resolve exactly as against the real one.
+ * Both entry styles work - the direct `UsbK_*` exports and the `KUSB_DRIVER_API`
+ * function table - as do the `OVERLAPPED` asynchronous API, pipe streams and
+ * isochronous streaming. The `WinUsb_*` names are exported too and forward to their
+ * `UsbK_*` twins, so a program written against `winusb.h` links unchanged.
+ *
+ * A stock binary has no place to name a USB/IP server in code, so the wrappers - alone
+ * in this library - take one from `USBIP_HOST` / `USBIP_PORT` in the environment, read
+ * once at `libusb_init` / `UsbK_Init` time. @ref tool_env has those variables, the
+ * syntax for each shell, and how to put a wrapper in front of the system library on
+ * each OS.
+ *
+ * Each wrapper's own page carries its build commands, a worked session and its per-call
+ * fidelity matrix - what is implemented, what is stubbed, and what USB/IP cannot honestly
+ * offer (hotplug, enforced timeouts, in-flight cancellation):
+ * @subpage md_wrapper_2libusb-1_80_2README and @subpage md_wrapper_2libusbK_2README.
+ *
+ * - @ref host_api - drive a device from your own code instead
+ * - @ref host_pyusb - point pyusb at the libusb wrapper
+ * - @ref tool_env - the environment variables in full
+ * - `examples/device/` - the device programs these tools are pointed at
+ */

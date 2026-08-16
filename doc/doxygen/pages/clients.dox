@@ -1,0 +1,35 @@
+/**
+ * @page clients USB/IP clients
+ *
+ * A program built on this library only *serves* a device: usbip_device_plug() listens on
+ * TCP 3240 and nothing enumerates until the importing machine **attaches** it. The
+ * importer is the USB/IP **client** - part of the OS, not of this library. (USB/IP
+ * inverts the words: the side providing the device is the *server*; see the
+ * @ref roles "role table".)
+ *
+ * @code{.text}
+ *   your program                        the client (importer)
+ *   USB device / USB-IP server   <---   USB host / USB-IP client   --->   OS USB stack
+ *   listens :3240                       connects                          binds a driver
+ * @endcode
+ *
+ * The attach commands differ per OS - one page each:
+ *
+ * Platform | Client | Attach with
+ * ---------|--------|------------
+ * @subpage cl_linux   | built in (`vhci-hcd`)   | `sudo usbip attach -r <ip> -b 1-1`
+ * @subpage cl_windows | install `usbip-win2` / `usbip-win` | `usbip.exe attach -r <ip> -b 1-1`
+ * @subpage cl_macos   | none in-box; one experimental one (SIP off) | a @ref cl_hw "hardware client", or drive from code
+ * @subpage cl_hw      | importer firmware on a board | the board's own shell
+ *
+ * On **any** OS you can also skip the client entirely: the @ref host_api "host API"
+ * imports and drives the device from your own process, with no kernel driver and no
+ * root. That is how the test suite runs, and one of the few options on macOS.
+ *
+ * Whichever client you use: address the server as `127.0.0.1` when it is the same
+ * machine, otherwise by IP - and then serve on `0.0.0.0` so it is reachable
+ * (@ref tool_remote). The bus id is `1-1` unless you export
+ * @ref dev_multi "several devices". Once attached, the OS binds its own in-box driver
+ * and the device is indistinguishable from real hardware.
+ *
+ */

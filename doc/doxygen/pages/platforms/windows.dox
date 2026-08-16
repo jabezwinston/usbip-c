@@ -1,0 +1,22 @@
+/**
+ * @page cl_windows Windows
+ *
+ * Windows has no in-box USB/IP client. Install
+ * <a href="https://github.com/vadimgrn/usbip-win2">usbip-win2</a> (Windows 10/11) or the
+ * older <a href="https://github.com/cezanne/usbip-win">usbip-win</a>.
+ *
+ * From an **Administrator** prompt:
+ *
+ * @code{.bat}
+ * usbip.exe attach -r 127.0.0.1 -b 1-1
+ * usbip.exe port
+ * usbip.exe detach -p 0
+ * @endcode
+ *
+ * Or from usbip-win2's GUI, which lists what the server offers and attaches the bus id
+ * you pick:
+ *
+ * @image html usbip-win2-gui.png width=700px
+ *
+ *
+ */

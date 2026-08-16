@@ -1,0 +1,25 @@
+*.o
+*.so
+*.exe
+*.dll
+# one per directory that builds something: build/, src/build/, examples/build/, ...
+build/
+# further trees, for building one target while another stays intact:
+#   make OS=Windows_NT BUILD_DIR=build-win
+#   make OS=Windows_NT CROSS_COMPILE=x86_64-w64-mingw32- BUILD_DIR=build-x64
+build-*/
+
+# Generated API documentation (Doxygen)
+/doc/html/
+
+# Release archive staged by scripts/package-windows.sh
+/dist/
+
+# Backing images and firmware blobs the examples create in the working directory
+*.img
+dfu_fw*.bin
+
+*.pcapng
+
+# Editor swap files
+*.swp

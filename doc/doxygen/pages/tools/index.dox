@@ -1,0 +1,11 @@
+/**
+ * @page tools Tools & Troubleshooting
+ *
+ * Diagnostics and operational reference - none of it changes the USB behaviour of a
+ * device:
+ *
+ * - @subpage tool_env - every `USBIP_*` environment variable
+ * - @subpage tool_capture - record every transfer to a PCAPNG for Wireshark
+ * - @subpage tool_debug - log control requests and data transfers as they happen
+ * - @subpage tool_remote - serve a device to another machine
+ */

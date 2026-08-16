@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: usbip-@ROLE@
+Description: USBIP C library, @ROLE@ side (virtual USB over USB/IP)
+Version: @VERSION@
+Libs: -L${libdir} -lusbip-@ROLE@
+Libs.private: -pthread
+Cflags: -I${includedir}

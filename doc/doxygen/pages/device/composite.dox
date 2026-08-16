@@ -1,0 +1,28 @@
+/**
+ * @page dev_composite Composite devices
+ *
+ * Adding two classes to one device makes it composite.
+ *
+ * `examples/device/cdc_hid_device.c` is a serial port plus a media-key (HID consumer
+ * control) function on one device.
+ * Declaring it composite is the whole difference - from there each function is added
+ * exactly as it would be on a device of its own:
+ *
+ * @snippet device/cdc_hid_device.c composite
+ *
+ * @snippet device/cdc_hid_device.c second_function
+ *
+ * One plug, and the host binds two of its own drivers: a serial port and a consumer
+ * control. Neither class is told it is sharing the device. Interface numbers are handed
+ * out as functions are added - CDC-ACM takes 0 and 1, so the HID lands on 2 - and
+ * endpoint addresses work the same way, so instances never collide: each class asks
+ * for the address it would use alone, the core relocates the later ones onto free
+ * numbers, and each keeps the pipe it was handed. You assign neither yourself.
+ *
+ * How functions group interfaces, when the `EF/02/01` composite triple is required,
+ * and per-function Microsoft OS descriptors are covered by @ref usb_class "the class layer".
+ * To author a composite without the classes - writing the IADs and every descriptor by
+ * hand - see @ref dev_vendor, which does exactly that for one function. To serve several
+ * SEPARATE devices from one program instead - each with its own identity and attach -
+ * see @ref dev_multi.
+ */

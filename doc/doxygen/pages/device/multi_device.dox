@@ -1,0 +1,64 @@
+/**
+ * @page dev_multi Multiple devices
+ *
+ * One program can serve several **independent** USB devices at once. Plug each onto
+ * the same transport and they share one listener: the host enumerates them all,
+ * attaches them separately, and detaching one leaves the others alone.
+ *
+ * This is not the same as a @ref dev_composite "composite device". A composite is
+ * ONE device with several functions, seen under one VID/PID and attached once;
+ * several devices are separate products that happen to be emulated by one program,
+ * each with its own descriptors, its own busid, its own endpoint space (both can use
+ * `0x81`) and its own attach.
+ *
+ * @code
+ * usbip_device *kbd = usbip_device_create(0x1209, 0x0014);
+ * hid_opts hopts = { 
+ *    .report_desc = RD_KEYBOARD, 
+ *    .report_desc_len = sizeof(RD_KEYBOARD),
+ *    .subclass = HID_SUBCLASS_BOOT,
+ *    .protocol = HID_PROTOCOL_KEYBOARD
+ * };
+ * hid_add(kbd, &hopts);
+ *
+ * usbip_device *ser = usbip_device_create(0x1209, 0x0015);
+ * cdc_acm_opts copts = { 
+ *   .on_rx = on_rx_callback, 
+ *   .name = "USBIP Serial" 
+ * };
+ * cdc_acm_add(ser, &copts);
+ *
+ * usb_transport *transport = usbip_transport("0.0.0.0", 3240);
+ * usbip_device_plug(kbd, transport);       // busid 1-1
+ * usbip_device_plug(ser, transport);       // busid 1-2
+ * @endcode
+ *
+ * Nothing else changes: each device is built exactly as it would be on its own.
+ *
+ * Devices are named on the wire by **busid**, assigned `1-1`, `1-2`, ... in plug
+ * order - what an importer selects:
+ *
+ * @htmlonly[block]<div class="lang-sh"></div>@endhtmlonly
+ * @code{.sh}
+ * usbip list -r 127.0.0.1                   # 1-1 keyboard, 1-2 serial
+ * sudo usbip attach -r 127.0.0.1 -b 1-1     # import the keyboard
+ * sudo usbip attach -r 127.0.0.1 -b 1-2     # import the serial port
+ * @endcode
+ *
+ * Each import is independent: the host binds a separate driver to each device, exactly
+ * as if you had plugged in two.
+ *
+ * usbip_device_set_busid() pins a name when plug order is not stable enough (call it
+ * before usbip_device_plug()), and usbip_device_get_busid() reads back the one in
+ * effect - handy for the "attach with this" line an example prints. Importing a busid
+ * nobody exports is refused, rather than served some other device.
+ *
+ * usbip_host_get_device_list() returns every exported device and
+ * usbip_host_open_vid_pid() picks one by identity, so a host program needs no
+ * changes. The libusb-1.0 drop-in (@ref wrappers) reports them as separate devices
+ * with distinct bus/device addresses, so a stock libusb program sees both.
+ *
+ * The listener is shared by address, so the second usbip_device_plug() on
+ * `0.0.0.0:3240` joins the first one's socket instead of failing to bind.
+ *
+ */

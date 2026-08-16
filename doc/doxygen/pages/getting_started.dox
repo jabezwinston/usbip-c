@@ -1,0 +1,131 @@
+/**
+ * @page getting_started Getting Started
+ *
+ * Get the library, build against it, run a device, import it with a USB/IP client.
+ *
+ * The only prebuilt package is for **Windows** - one archive per release, both
+ * architectures in it:
+ * <a href="https://github.com/jabezwinston/usbip-c/releases">github.com/jabezwinston/usbip-c/releases</a>.
+ * It unpacks to:
+ *
+ * Path                     | What it is
+ * ------------------------ | -----------------------------------------------------------
+ * `include/`               | every header - one `-Iinclude` covers all of them
+ * `lib/x86`, `lib/x64`     | both roles, static (`.a`) and shared (`.dll` + `.dll.a`)
+ * `bin/x86`, `bin/x64`     | each device example, as a ready-to-run `.exe`
+ * `dropin/x86`, `dropin/x64` | the @ref wrappers "drop-in" `libusb-1.0.dll` and `libusbK.dll`
+ * `src/`                   | the @ref usb_classes "class layer", which has no binary form
+ *
+ * Everywhere else, build from source. It needs GNU make and a C11 compiler, and nothing
+ * else - the headers are plain C11 on the platform's own sockets and threads.
+ *
+ * @htmlonly[block]<div class="lang-sh"></div>@endhtmlonly
+ * @code{.sh}
+ * git clone https://github.com/jabezwinston/usbip-c
+ * cd usbip-c
+ * make                 # examples, plus both role libraries in src/build/
+ * @endcode
+ *
+ * On Windows that is `mingw32-make`, not MSYS2's `make`; to cross-build for Windows
+ * *from* Linux or macOS, `make OS=Windows_NT`.
+ *
+ * On Linux and macOS, `sudo make install PREFIX=/usr/local` also drops pkg-config files:
+ *
+ * @htmlonly[block]<div class="lang-sh"></div>@endhtmlonly
+ * @code{.sh}
+ * gcc my_device.c $(pkg-config --cflags --libs usbip-device) -o my_device
+ * @endcode
+ *
+ * Either way, what you build against is three headers and one library per role:
+ *
+ * File                                       | What it is
+ * ------------------------------------------ | ---------------------------------------
+ * `usbip.h`                                   | shared USB types, errors, transport - both roles include it
+ * `usbip-device.h`                            | the @ref device "device API" - be a USB device
+ * `usbip-host.h`                              | the @ref host "host API" - drive a USB device
+ * `libusbip-device.a`, `libusbip-host.a`      | static libraries, one per role
+ * `.so.0` / `.dll` (+ `.dll.a`) / `.0.dylib`  | the same two, shared - Linux / Windows / macOS
+ *
+ * @note Link **one role per binary**. The two libraries share internal code, so a
+ * program linking both gets duplicate symbols. A process that needs both sides at
+ * once (in-process loopback tests) should build the library from source instead.
+ *
+ * **Linux / macOS**, from a source tree (macOS: clang, and `DYLD_LIBRARY_PATH` in place
+ * of `LD_LIBRARY_PATH`):
+ *
+ * @htmlonly[block]<div class="lang-sh"></div>@endhtmlonly
+ * @code{.sh}
+ * gcc my_device.c -Iinclude src/build/libusbip-device.a -pthread -o my_device
+ *
+ * gcc my_device.c -Iinclude -Lsrc/build -lusbip-device -o my_device   # shared instead
+ * LD_LIBRARY_PATH=src/build ./my_device
+ * @endcode
+ *
+ * **Windows** (mingw-w64), from the unpacked archive: `-lws2_32` is winsock, and
+ * `-static` folds in winpthreads so you ship one `.exe`. A shared build instead wants
+ * the `.dll` beside the program, which is where Windows looks first:
+ *
+ * @htmlonly[block]<div class="lang-sh"></div>@endhtmlonly
+ * @code{.sh}
+ * gcc my_device.c -Iinclude lib\x64\libusbip-device.a -lws2_32 -pthread -static -o my_device.exe
+ * @endcode
+ *
+ * Swap `-lusbip-device` for `-lusbip-host` to build a @ref host_api "host driver" instead.
+ *
+ * A USB **Boot-protocol HID keyboard**, written on the @ref device "device core" alone:
+ * hand-authored descriptors and one control handler, with no class layer involved.
+ * Beyond the four core calls, the rest is the USB spec's own boot-keyboard boilerplate.
+ *
+ * @include boot_keyboard.c
+ *
+ * Build and run it:
+ *
+ * @htmlonly[block]<div class="lang-sh"></div>@endhtmlonly
+ * @code{.sh}
+ * gcc boot_keyboard.c -Iinclude src/build/libusbip-device.a -pthread -o boot_keyboard
+ * ./boot_keyboard                 # serves 1209:0011 on TCP :3240
+ * @endcode
+ *
+ * Nothing happens yet - that is expected. usbip_device_plug() opens a **listening
+ * TCP socket** on port 3240 and waits: your program is the USB/IP **server**
+ * (see the @ref roles "role table"), and until a client imports the device the
+ * queued key reports simply sit in the endpoint.
+ *
+ * The keyboard above is deliberately raw - it shows the whole core API. In practice
+ * a ready-made @ref classes "device class" does the descriptors and the class
+ * protocol for you; the same keyboard is then three lines:
+ *
+ * @snippet device/hid_device.c add
+ *
+ * See @ref usb_classes for the full list and each class's reference page.
+ *
+ * On **Linux** the client is built into the kernel - the `vhci-hcd` virtual host
+ * controller:
+ *
+ * @htmlonly[block]<div class="lang-sh"></div>@endhtmlonly
+ * @code{.sh}
+ * sudo modprobe vhci-hcd                       # once per boot
+ * sudo usbip attach -r 127.0.0.1 -b 1-1        # import the served device
+ * @endcode
+ *
+ * Detach with `sudo usbip detach -p 0`. On **Windows** there is no in-box client;
+ * install a `usbip-win`-style one and run `usbip.exe attach -r 127.0.0.1 -b 1-1`.
+ * **macOS** has no in-box client and only an experimental third-party one that needs SIP
+ * disabled, so a @ref cl_hw "hardware client" is the practical route there; a Mac can
+ * also serve a device, or drive one with the @ref host_api. @ref clients has the full
+ * commands for each OS, @ref cl_hw the embedded importers.
+ *
+ * Once imported, the keyboard types its text into whatever window has focus: the host
+ * binds its ordinary HID driver, because as far as it is concerned this is a real
+ * keyboard. The server side can also pull the plug itself with usbip_device_unplug().
+ *
+ * Two environment variables turn on diagnostics for any program on the library:
+ * `USBIP_PCAPNG=file.pcapng` records every transfer for Wireshark
+ * (@ref tool_capture), and `USBIP_DEBUG=1` logs every control request and data
+ * transfer as it happens (@ref tool_debug). The full table - including the
+ * `USBIP_HOST`/`USBIP_PORT` pair the wrappers read - is on @ref tool_env.
+ *
+ * - @ref usb_concepts - the USB vocabulary the API uses
+ * - @ref device_guide - a recipe per device class (serial, storage, camera, audio, ...)
+ * - @ref host_guide - drive a device from your own code, with no kernel driver
+ */

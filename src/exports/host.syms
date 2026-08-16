@@ -1,0 +1,30 @@
+# Exported symbols of libusbip-host - everything declared in the public
+# usbip.h + usbip-host.h, nothing else. scripts/gen_exports.py turns this
+# into a version script (.map), module definition (.def) or export list (.sym).
+usb_strerror
+usbip_transport
+usbip_loopback
+usbip_transport_free
+usbip_host_init
+usbip_host_exit
+usbip_host_set_transport
+usbip_host_get_device_list
+usbip_host_free_device_list
+usbip_host_get_device_descriptor
+usbip_host_open
+usbip_host_open_vid_pid
+usbip_host_close
+usbip_host_set_configuration
+usbip_host_claim_interface
+usbip_host_release_interface
+usbip_host_set_interface_alt_setting
+usbip_host_clear_halt
+usbip_host_control_transfer
+usbip_host_bulk_transfer
+usbip_host_interrupt_transfer
+usbip_host_alloc_transfer
+usbip_host_free_transfer
+usbip_host_fill_iso_transfer
+usbip_host_set_iso_packet_lengths
+usbip_host_get_iso_packet_buffer_simple
+usbip_host_submit_transfer

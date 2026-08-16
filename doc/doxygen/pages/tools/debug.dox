@@ -1,0 +1,28 @@
+/**
+ * @page tool_debug Debugging
+ *
+ * `USBIP_DEBUG` (any non-empty value) makes the device core print one line per
+ * control request with the verdict, plus one line per data transfer - the fastest
+ * way to find the request a host is sending that your handler STALLs by accident,
+ * or to see whether an endpoint is moving bytes at all:
+ *
+ * @htmlonly[block]<div class="lang-sh"></div>@endhtmlonly
+ * @code{.sh}
+ * USBIP_DEBUG=1 ./boot_keyboard          # Windows: set USBIP_DEBUG=1 on its own line first
+ * [usbip_device] ctrl type=0x80 req=0x06 val=0x0200 idx=0x0000 len=64  -> ok      # GET_DESCRIPTOR(config)
+ * [usbip_device] ctrl type=0x81 req=0x06 val=0x2200 idx=0x0000 len=128 -> ok      # the Report descriptor
+ * [usbip_device] ctrl type=0x21 req=0x09 val=0x0200 idx=0x0000 len=1   -> ok      # SET_REPORT (the LEDs)
+ * [usbip_device] IN  ep=0x81 interrupt len=8                                      # a key report went out
+ * [usbip_device] IN  ep=0x81 interrupt len=8                                      # the release report
+ * @endcode
+ *
+ * A data line carries the direction, the endpoint address, the endpoint's transfer
+ * type and the number of bytes that actually moved. Isochronous lines add the packet
+ * count (`len=14362 16 pkts`, the de-padded total). An IN URB with no data yet logs
+ * `-> parked, no data yet`, then logs again with the real length once
+ * usbip_device_write() feeds it.
+ *
+ * A `-> STALL` line is the device saying "no": either a request you chose not to
+ * answer (a Device Qualifier, say, which a full-speed device must STALL) or a bug in
+ * the handler. @ref usb_concepts decodes the `type=` byte.
+ */

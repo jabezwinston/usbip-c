@@ -1,0 +1,57 @@
+/*
+ * Copyright (C) 2026 Jabez Winston
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * usbip.rc - the VERSIONINFO resource carried by every Windows artifact.
+ *
+ * One script serves all of them. It is never compiled directly: for each
+ * artifact the Makefile generates a small .rc that defines the strings below
+ * (file name, description, VFT_DLL vs VFT_APP, the version numbers) and then
+ * includes this file, so adding an example needs no change here.
+ *
+ * The version is NOT read from include/usbip.h: windres feeds the whole
+ * preprocessed text to its resource parser, which cannot digest a C header.
+ * The Makefile splits USBIP_VERSION into the generated defines, so usbip.h
+ * stays the single source of truth.
+ */
+
+#include <winver.h>
+
+/* set by the Makefile: VS_FF_DEBUG for DEBUG=1, VS_FF_PRERELEASE while 0.x */
+#ifndef RC_DEBUG_FLAG
+#define RC_DEBUG_FLAG 0
+#endif
+#ifndef RC_PRERELEASE_FLAG
+#define RC_PRERELEASE_FLAG 0
+#endif
+
+VS_VERSION_INFO VERSIONINFO
+  FILEVERSION    RC_VER_MAJOR,RC_VER_MINOR,RC_VER_MICRO,RC_VER_NANO
+  PRODUCTVERSION RC_VER_MAJOR,RC_VER_MINOR,RC_VER_MICRO,RC_VER_NANO
+  FILEFLAGSMASK  VS_FFI_FILEFLAGSMASK
+  FILEFLAGS      (RC_DEBUG_FLAG | RC_PRERELEASE_FLAG)
+  FILEOS         VOS_NT_WINDOWS32
+  FILETYPE       RC_FILETYPE
+  FILESUBTYPE    VFT2_UNKNOWN
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904b0"   /* US English (0x409), Unicode (1200) */
+    BEGIN
+      VALUE "CompanyName",      "Jabez Winston"
+      VALUE "FileDescription",  RC_DESCRIPTION
+      VALUE "FileVersion",      RC_VERSION_STR
+      VALUE "InternalName",     RC_INTERNAL_NAME
+      VALUE "OriginalFilename", RC_FILE_NAME
+      VALUE "ProductName",      "USBIP C Library"
+      VALUE "ProductVersion",   RC_VERSION_STR
+      VALUE "LegalCopyright",   "\251 2026 Jabez Winston, MIT License."
+      VALUE "Comments",         "USB/IP virtual USB device & host library - https://github.com/jabezwinston/usbip-c"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1200
+  END
+END

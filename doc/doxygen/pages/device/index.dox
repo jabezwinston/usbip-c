@@ -1,0 +1,22 @@
+/**
+ * @page device_guide Device
+ *
+ * The **device side** of the library: your program *is* the USB device. Everything
+ * under this section is a task-focused recipe - the smallest code that does
+ * something real, lifted verbatim from the runnable programs under `examples/`.
+ * Run one, then import it (@ref clients) to see the host's own driver bind.
+ *
+ * - @subpage usb_classes - the ready-made, host-recognised classes: keyboard,
+ *   serial port, disk, webcam, sound card, media transfer, firmware upgrade,
+ *   Bluetooth dongle. One reference page per class, and a runnable example for
+ *   every class but Bluetooth.
+ * - @subpage dev_vendor - your own protocol, opened from your code or a browser.
+ * - @subpage dev_composite - several functions on one device: a disk *and* its
+ *   serial console.
+ * - @subpage dev_multi - several independent devices from one process, each with
+ *   its own identity and busid.
+ *
+ * New to USB? Read the short @ref usb_concepts primer first - it explains the
+ * vocabulary (descriptors, endpoints, the SETUP packet, STALL) these recipes use.
+ * To *drive* a device instead of being one, see @ref host_guide.
+ */

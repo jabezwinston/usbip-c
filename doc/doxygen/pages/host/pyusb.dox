@@ -1,0 +1,32 @@
+/**
+ * @page host_pyusb pyusb
+ *
+ * pyusb is the usual way to talk to USB from Python, and it can drive a virtual
+ * device from either library - by loading the @ref wrappers "libusb-1.0 wrapper" as
+ * its backend instead of the system libusb. pyusb loads that backend from a path you
+ * choose, so pointing it at the wrapper needs no `LD_PRELOAD` and no copying a DLL. With
+ * the variables set in `os.environ` rather than the shell, this is the same code on
+ * every OS - only the file name changes:
+ *
+ * @code{.py}
+ * import os
+ * import usb.core, usb.backend.libusb1
+ *
+ * # the wrapper reads these in libusb_init(), i.e. inside get_backend()
+ * os.environ["USBIP_HOST"] = "127.0.0.1"
+ * os.environ["USBIP_PORT"] = "3240"
+ *
+ * # the usbip wrapper, not the system libusb:
+ * #   Linux   /path/to/libusb-1.0.so.0
+ * #   macOS   /path/to/libusb-1.0.0.dylib
+ * #   Windows C:\path\to\libusb-1.0.dll
+ * backend = usb.backend.libusb1.get_backend(find_library=lambda _: "/path/to/libusb-1.0.dll")
+ * dev = usb.core.find(idVendor=0x1209, idProduct=0x0004, backend=backend)
+ * @endcode
+ *
+ * The Python guide's
+ * <a href="https://jabezwinston.github.io/usbip-python/host/pyusb/">pyusb page</a>
+ * walks a full program through this, with the behavioural differences that matter
+ * to a pyusb caller (string indices read 0, no hotplug, timeouts not enforced -
+ * @ref wrappers).
+ */

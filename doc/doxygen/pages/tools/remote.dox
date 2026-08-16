@@ -1,0 +1,28 @@
+/**
+ * @page tool_remote Going remote
+ *
+ * The transport is local by default; going remote is one argument at each end.
+ *
+ * On the **device side**, listen where the client can reach you:
+ * `usbip_transport(NULL, 3240)` (or `"0.0.0.0"`) binds every interface, while
+ * `"127.0.0.1"` binds only the loopback, which a remote client can never reach.
+ * Open TCP 3240 in the firewall.
+ *
+ * @code{.c}
+ * usb_transport *transport = usbip_transport(NULL, 3240);
+ * usbip_device_plug(dev, transport);          // serve on the network
+ * @endcode
+ *
+ * On the **host side**, point the context at the serving machine:
+ *
+ * @code{.c}
+ * usb_transport *transport = usbip_transport("10.0.0.5", 3240);
+ * usbip_host_set_transport(ctx, transport);
+ * @endcode
+ *
+ * An OS importer attaches the same way from anywhere:
+ * `usbip attach -r <server-ip> -b 1-1` (@ref clients).
+ *
+ * Speed declarations, isochronous pacing and the latency cost of a network round
+ * trip per transfer are covered in @ref cl_hw.
+ */

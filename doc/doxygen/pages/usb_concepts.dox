@@ -1,0 +1,87 @@
+/**
+ * @page usb_concepts USB concepts
+ *
+ * A handful of USB terms recur in the API; this page explains them. The
+ * @ref classes "device classes" hide most of the detail.
+ *
+ * A USB device is a small tree: a **device** (identified by a VID:PID) has a
+ * **configuration**, which has **interfaces** (functions), each with **endpoints**
+ * (one-way data pipes). In the C library a ::usbip_interface is one interface and a ::usbip_ep is
+ * one endpoint.
+ *
+ * An endpoint address encodes number + direction: bit 7 set = **IN** (device → host),
+ * clear = **OUT** (host → device). So `0x81` is "endpoint 1, IN"; `0x01` is
+ * "endpoint 1, OUT". Endpoint 0 always exists and carries *control* transfers.
+ *
+ * A **descriptor** is a small binary structure describing the device - see the typed
+ * structs in the @ref desc "descriptors" group (::usb_device_descriptor,
+ * ::usb_endpoint_descriptor, …), which the library serialises for you.
+ *
+ * Type            | Used for                              | Guarantees
+ * --------------- | ------------------------------------- | ---------------------
+ * Control         | setup/config/commands (endpoint 0)    | reliable, low volume
+ * Bulk            | large data, no timing (storage/serial)| reliable, no timing
+ * Interrupt       | small periodic events (HID)           | bounded latency
+ * Isochronous     | streaming media (audio/video)         | steady timing, may drop
+ *
+ * Every control transfer begins with an 8-byte SETUP packet - ::usb_setup:
+ *
+ * Field           | Meaning
+ * --------------- | ----------------------------------------------------
+ * `bmRequestType` | a bitmask (direction, type, recipient - see below)
+ * `bRequest`      | the request code (e.g. GET_DESCRIPTOR = 0x06)
+ * `wValue`,`wIndex` | request-specific parameters
+ * `wLength`       | how many data bytes follow
+ *
+ * `bmRequestType` packs three fields into one byte:
+ *
+ * Bit(s) | Field       | Values                                          | In the API
+ * ------ | ----------- | ----------------------------------------------- | ----------
+ * 7      | direction   | 0 = OUT (host → device), 1 = IN (device → host) | ::USB_REQ_DIR_IN
+ * 6 – 5  | type        | 0 = standard, 1 = class, 2 = vendor             | ::USB_REQ_TYPE → ::usb_req_type
+ * 4 – 0  | recipient   | 0 = device, 1 = interface, 2 = endpoint         | ::USB_REQ_RECIP → ::USB_RECIP_DEVICE …
+ *
+ * Common values: `0x80` = IN/standard/device (get device descriptor); `0x21` =
+ * OUT/class/interface (e.g. CDC set-line-coding, HID set-report); `0xA1` =
+ * IN/class/interface (HID get-report). The core answers standard requests; your
+ * handler - usbip_device_on_control() on the core, usbip_function_on_control() in a
+ * class - sees the class and vendor ones, plus GET_DESCRIPTOR for class-specific
+ * descriptor types.
+ *
+ * If a device can't honour a request - unsupported, out of range, bad endpoint state -
+ * it returns a **STALL** (USB's "no"). In the C library a control handler signals STALL by
+ * **returning a negative value**. On the host side a
+ * STALL surfaces as ::USB_ERROR_PIPE.
+ *
+ * Other endpoints don't answer a request, so they **halt** instead: usbip_ep_stall()
+ * makes the endpoint STALL every transfer until the host sends
+ * `CLEAR_FEATURE(ENDPOINT_HALT)`, which the core answers itself (a host recovers a
+ * halted pipe with usbip_host_clear_halt()). A halt is how a device abandons a
+ * transfer it cannot complete, instead of leaving the host waiting for its timeout.
+ * Data already written to the endpoint survives the halt and is delivered once it is
+ * cleared - mass storage relies on this to halt a failed data phase and still report
+ * its status wrapper afterwards.
+ *
+ * @code{.c}
+ * usbip_ep_stall(ep);                 // device side: halt the pipe
+ * usbip_host_clear_halt(h, 0x81);     // host side: recover a halted pipe
+ * @endcode
+ *
+ * The host API returns numeric codes - the @ref errors "USB_ERROR_* values" use the
+ * same numbers as libusb, so ported constants keep working; usb_strerror() renders them
+ * as text.
+ *
+ * Each class adds a few terms of its own; they're explained where they're used:
+ *
+ * - **HID report & report descriptor**, **boot vs. report protocol**
+ *   (`GET_PROTOCOL`/`SET_PROTOCOL`) → @ref class_hid.
+ * - **Line coding / DTR** (serial) → @ref class_cdc.
+ * - **LBA / block** (storage) → @ref class_msc.
+ * - **HCI / ACL** (Bluetooth) → @ref class_bt.
+ *
+ * USB/IP carries these transfers over TCP: your program answers URBs, and a
+ * @ref clients "client" on the importing machine replays them into a real USB stack.
+ * The naming is inverted from USB's (see the @ref roles "role table"). The transport
+ * has two practical consequences - no bus frame clock and a network round trip per
+ * transfer - covered in @ref cl_hw.
+ */

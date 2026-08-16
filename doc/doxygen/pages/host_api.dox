@@ -1,0 +1,101 @@
+/**
+ * @page host_api Host driver
+ *
+ * The @ref host "host API" is the other half of the library: instead of *being* a USB
+ * device, you *drive* one. It is deliberately libusb-shaped - porting libusb code is
+ * essentially `s/libusb_/usbip_host_/` - and it talks USB/IP itself, so it needs no
+ * kernel driver, no `vhci` and no root. It runs the same on Linux, Windows and macOS.
+ *
+ * In USB/IP terms this side is the **client** (@ref roles "role table"): something
+ * must already be serving before any of the calls below can succeed - a program on
+ * the @ref device "device API", or a real `usbipd` exporting genuine hardware. Both
+ * are driven with identical code.
+ *
+ * Link `-lusbip-host` (never both roles in one binary - see @ref getting_started).
+ *
+ * This below example lists what a server exports, imports one device by vendor/product id, reads its
+ * descriptor over a control transfer, and round-trips a payload through its bulk
+ * endpoints. Run `vendor_device` first, then this against it.
+ *
+ * @include host_drive.c
+ *
+ * @htmlonly[block]<div class="lang-sh"></div>@endhtmlonly
+ * @code{.sh}
+ * gcc host_drive.c -I. libusbip-host.a -pthread -o host_drive
+ * ./vendor_device        # the device being driven
+ * ./host_drive           # in a second terminal
+ * @endcode
+ *
+ * On Windows the link line adds `-lws2_32 -static` and the programs end in `.exe`.
+ *
+ * A Linux box exports real USB hardware with the kernel's own `usbipd`. Exporting is
+ * the one step that is Linux-only - `usbipd` / `usbip bind` have no equivalent
+ * elsewhere - while your driver still runs on any OS. Bind the device to the USB/IP
+ * host driver on the machine holding it:
+ *
+ * @htmlonly[block]<div class="lang-sh"></div>@endhtmlonly
+ * @code{.sh}
+ * sudo modprobe usbip-host
+ * sudo usbipd -D                       # the USB/IP server daemon
+ * usbip list -l                        # find the bus id, e.g. 3-2
+ * sudo usbip bind -b 3-2               # export it
+ * @endcode
+ *
+ * Then point a host context at that machine and use it exactly as above - the API does
+ * not know or care that the device is physical:
+ *
+ * @code{.c}
+ * usb_transport *transport = usbip_transport("10.0.0.5", 3240);
+ * usbip_host_set_transport(ctx, transport);
+ * @endcode
+ *
+ * `examples/host/host_probe.c` is the tool for this: it enumerates a server, opens the
+ * first device, walks the configuration descriptor and issues a class request. It is
+ * how the library is tested against real kernel gadgets.
+ *
+ * Everything hangs off a ::usbip_host_context: usbip_host_init() creates it,
+ * usbip_host_exit() destroys it. The context starts on the local transport;
+ * usbip_host_set_transport() points it at a remote server (the context does not take
+ * ownership - free the transport yourself with usbip_transport_free() after exit).
+ *
+ * Enumeration is libusb's model: usbip_host_get_device_list() returns a
+ * `NULL`-terminated array of ::usbip_host_device (and the count), each of which
+ * answers usbip_host_get_device_descriptor() and opens with usbip_host_open();
+ * release the array with usbip_host_free_device_list() (open handles stay valid).
+ * usbip_host_open_vid_pid() collapses all of that into one call when a VID:PID
+ * match is enough.
+ *
+ * Configuration is the standard requests under libusb names:
+ * usbip_host_set_configuration() (SET_CONFIGURATION) and
+ * usbip_host_set_interface_alt_setting() (SET_INTERFACE).
+ * usbip_host_claim_interface() / usbip_host_release_interface() are compatibility
+ * no-ops - USB/IP has no kernel driver to detach and no exclusive-ownership concept -
+ * kept so ported libusb code compiles and runs unchanged.
+ *
+ * Function                            | Transfer
+ * ----------------------------------- | ---------------------------------------------
+ * usbip_host_control_transfer()       | control (endpoint 0)
+ * usbip_host_bulk_transfer()          | bulk
+ * usbip_host_interrupt_transfer()     | interrupt
+ * usbip_host_alloc_transfer() + usbip_host_fill_iso_transfer() + usbip_host_submit_transfer() | isochronous
+ *
+ * The isochronous path mirrors libusb's asynchronous API - usbip_host_alloc_transfer(),
+ * usbip_host_fill_iso_transfer(), usbip_host_set_iso_packet_lengths(),
+ * usbip_host_get_iso_packet_buffer_simple(), usbip_host_free_transfer() - except that
+ * submission is *synchronous*: the USBIP host is blocking by design.
+ * `examples/host/uvc_host.c` pulls webcam frames this way.
+ *
+ * A STALLed transfer returns ::USB_ERROR_PIPE; recover the pipe with
+ * usbip_host_clear_halt() (@ref usb_concepts explains STALL and halt). Every code
+ * renders through usb_strerror().
+ *
+ * If the program that should drive the device already exists - `dfu-util`, `lsusb`, a
+ * pyusb script, a libusbK or WinUSB application - it needs no porting and none of the
+ * API above: @ref wrappers lets a stock binary drive a virtual device unmodified,
+ * and @ref host_pyusb covers pyusb specifically.
+ *
+ * - @ref host - the full host API reference
+ * - @ref wrappers - run an existing libusb / libusbK program instead
+ * - @ref clients - importing into an OS instead of driving from code
+ * - `examples/host/` - the runnable programs: `cdc_host`, `uvc_host`, `host_probe`
+ */

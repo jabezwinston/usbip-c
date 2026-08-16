@@ -1,0 +1,6 @@
+{
+	global:
+		libusb_*;
+	local:
+		*;
+};

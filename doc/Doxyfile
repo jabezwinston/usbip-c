@@ -1,0 +1,140 @@
+# Doxyfile for the usbip C library.
+#
+# Run from this directory:  doxygen Doxyfile
+# Output: ./html/index.html
+#
+# Paths are relative to doc/ (the directory holding this file), so ".." is the C
+# tree root - the repository root of the published C library.
+
+#---------------------------------------------------------------------------
+# Project
+#---------------------------------------------------------------------------
+DOXYFILE_ENCODING      = UTF-8
+PROJECT_NAME           = "USBIP C library"
+PROJECT_NUMBER         = 0.7.0
+PROJECT_BRIEF          = "Virtual USB devices & host drivers over USB/IP"
+OUTPUT_DIRECTORY       = .
+CREATE_SUBDIRS         = NO
+OUTPUT_LANGUAGE        = English
+ALLOW_UNICODE_NAMES    = YES
+MARKDOWN_SUPPORT       = YES
+AUTOLINK_SUPPORT       = YES
+TAB_SIZE               = 4
+
+#---------------------------------------------------------------------------
+# Build / extraction - C library
+#---------------------------------------------------------------------------
+OPTIMIZE_OUTPUT_FOR_C  = YES
+TYPEDEF_HIDES_STRUCT   = YES
+JAVADOC_AUTOBRIEF      = YES
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = NO
+EXTRACT_LOCAL_CLASSES  = NO
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_SCOPE_NAMES       = NO
+SHOW_INCLUDE_FILES     = YES
+# Don't generate the raw "source of this file" listing pages - the reference is the
+# documented API, not the verbatim headers (also keeps the license header out of the
+# rendered site).
+VERBATIM_HEADERS       = NO
+SORT_MEMBER_DOCS       = NO
+SORT_BRIEF_DOCS        = NO
+SORT_GROUP_NAMES       = NO
+GENERATE_TODOLIST      = NO
+GENERATE_TESTLIST      = NO
+GENERATE_BUGLIST       = NO
+MAX_INITIALIZER_LINES  = 0
+
+#---------------------------------------------------------------------------
+# Input
+#---------------------------------------------------------------------------
+INPUT                  = ../include doxygen ../wrapper/libusb-1.0/README.md \
+                         ../wrapper/libusbK/README.md
+INPUT_ENCODING         = UTF-8
+FILE_PATTERNS          = *.h *.dox
+RECURSIVE              = YES
+# @include / @snippet sources: the runnable examples, the class implementations (a
+# class is itself the reference use of the class layer), and the two documentation
+# programs the guide pages embed verbatim, which live beside these pages.
+EXAMPLE_PATH           = ../examples ../src examples
+EXAMPLE_PATTERNS       = *
+# @image sources - the same screenshots README.md links to.
+IMAGE_PATH             = img
+EXAMPLE_RECURSIVE      = YES
+# Strip the leading ../include from displayed header paths.
+STRIP_FROM_PATH        = ../include ..
+STRIP_FROM_INC_PATH    = ../include
+
+#---------------------------------------------------------------------------
+# Warnings - keep CI builds clean
+#---------------------------------------------------------------------------
+QUIET                  = YES
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = NO
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = NO
+WARN_AS_ERROR          = FAIL_ON_WARNINGS
+
+#---------------------------------------------------------------------------
+# HTML output
+#---------------------------------------------------------------------------
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+HTML_FILE_EXTENSION    = .html
+HTML_COLORSTYLE        = LIGHT
+# Layered over the stock stylesheet - mainly to stop @code / @include listings
+# rendering smaller than the prose around them.
+HTML_EXTRA_STYLESHEET  = doxygen/custom.css
+# Doxygen has no shell lexer, so shell blocks are highlighted in the browser
+# instead (see doxygen/shell_highlight.js). Doxygen offers no way to inject a
+# script - HTML_EXTRA_FILES copies a file but never references it - so the script
+# tag has to live in a custom header.
+#
+# doxygen/header.html is Doxygen's own stock header plus that one script tag.
+# REGENERATE IT ON A DOXYGEN UPGRADE, or the site silently loses whatever the new
+# version added:
+#     doxygen -w html doxygen/header.html /dev/null /dev/null Doxyfile
+# then delete the leading "HTML header for doxygen ..." comment (it would precede
+# the doctype and trip quirks mode) and re-add the script tag before </head>.
+# Keep every $placeholder and BEGIN/END marker Doxygen wrote: it substitutes
+# them, and a dropped one quietly removes a feature (search box, treeview).
+HTML_HEADER            = doxygen/header.html
+HTML_EXTRA_FILES       = doxygen/shell_highlight.js
+GENERATE_TREEVIEW      = YES
+DISABLE_INDEX          = NO
+FULL_SIDEBAR           = NO
+HTML_DYNAMIC_SECTIONS  = YES
+SEARCHENGINE           = YES
+
+GENERATE_LATEX         = NO
+GENERATE_RTF           = NO
+GENERATE_MAN           = NO
+GENERATE_XML           = NO
+
+#---------------------------------------------------------------------------
+# Preprocessor - let Doxygen parse the packed-struct attribute away
+#---------------------------------------------------------------------------
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = USB_PACKED= \
+                         __attribute__(x)=
+
+# Byte-order plumbing behind usb_get_le16() and friends: the swap intrinsics, the
+# host-endianness probe, the conv macros the accessors are stamped from, and the
+# two X-macros (which usbip.h #undef's straight after use). Implementation detail,
+# not API - documenting them would advertise them as callable.
+EXCLUDE_SYMBOLS        = USB_BSWAP16 USB_BSWAP32 USB_BSWAP64 \
+                         USB_HOST_BIG_ENDIAN \
+                         USB_CONV_LE16 USB_CONV_LE32 USB_CONV_LE64 \
+                         USB_CONV_BE16 USB_CONV_BE32 USB_CONV_BE64 \
+                         USB_BYTEORDER_GET USB_BYTEORDER_PUT
+
+#---------------------------------------------------------------------------
+# Diagrams (graphviz/dot is available)
+#---------------------------------------------------------------------------
+HAVE_DOT               = YES
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES
+INCLUDE_GRAPH          = NO
+INCLUDED_BY_GRAPH      = NO

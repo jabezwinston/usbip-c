@@ -1,0 +1,151 @@
+/**
+ * @page dev_vendor Vendor Devices & WebUSB
+ *
+ * Not everything is a standard class. A **vendor-specific** device speaks a protocol
+ * you define: interface class `0xFF`, which no operating system has a driver for. That
+ * is the point - nothing binds it, so your own program owns both ends. Most lab tools,
+ * programmers, dongles and one-off gadgets are shaped this way, and so is anything a
+ * web page drives over WebUSB.
+ *
+ * It is also the clearest demonstration that the @ref usb_class "class layer" is
+ * optional. Everything on this page is built on @ref device "the device core" alone -
+ * `usbip-device.h`, four calls, hand-written descriptors - with no class code behind it.
+ * The @ref classes "device classes" are a convenience layer over exactly these calls,
+ * not a layer you have to go through.
+ *
+ * **A vendor bulk device**
+ *
+ * One vendor interface, one Bulk OUT, one Bulk IN, and a loopback for behaviour. This is
+ * `examples/device/vendor_device.c` whole - the runnable program, and the device the
+ * @ref host_api "host walkthrough" drives:
+ *
+ * @include device/vendor_device.c
+ *
+ * Descriptors are appended in **wire order**, exactly as the configuration blob will be
+ * read back: an interface descriptor opens a section and everything after it belongs to
+ * that interface until the next one, so a class-specific descriptor of your own is just
+ * another usbip_device_add_descriptor() in the position it should occupy. `bNumEndpoints`
+ * is left 0 on purpose - the core counts endpoints as they are added.
+ *
+ * @note `bEndpointAddress` is a **preference**, not a demand. If another interface
+ * already holds `0x81` the endpoint is relocated to the lowest free number in the same
+ * direction, so keep the ::usbip_ep the call returns rather than looking the endpoint up
+ * later by the address you asked for (`0x00` / `0x80` mean "any"). That is what lets two
+ * independent functions land on one device without either knowing about the other.
+ *
+ * Put the `0xFF` on the *interface* and leave `bDeviceClass` at 0, as above: the
+ * per-interface form still composes with a standard-class function later
+ * (@ref dev_composite), a device-level one does not.
+ *
+ * usbip_device_read() returns one host OUT transfer per call and usbip_device_write()
+ * queues one IN transfer; both take a timeout in milliseconds, 0 meaning "block
+ * indefinitely". Data written before a host attaches stays queued and is delivered on
+ * attach.
+ *
+ * **Vendor control requests**
+ *
+ * Endpoints carry the data plane; a vendor protocol usually puts its *commands* on the
+ * control plane, which needs no endpoint and carries its arguments in the SETUP packet.
+ * The core answers every standard request itself and hands the rest to the handler
+ * registered with usbip_device_on_control():
+ *
+ * @code{.c}
+ * #define VREQ_SET_LED    0x01      // OUT: wValue = on/off
+ * #define VREQ_GET_COUNT  0x02      // IN:  4-byte counter
+ *
+ * static int vendor_ctrl(void *ctx, const usb_setup *setup, uint8_t *buf, uint16_t len)
+ * {
+ *     app_state *app = ctx;
+ *
+ *     if (USB_REQ_TYPE(setup->bmRequestType) != USB_VENDOR)
+ *         return -1;                                  // not ours -> STALL
+ *
+ *     switch (setup->bRequest) {
+ *     case VREQ_SET_LED:                              // no data stage
+ *         app->led = (setup->wValue != 0);
+ *         return 0;
+ *
+ *     case VREQ_GET_COUNT:                            // device -> host
+ *         if (len < 4)
+ *             return -1;
+ *         buf[0] = (uint8_t)(app->count      );
+ *         buf[1] = (uint8_t)(app->count >>  8);
+ *         buf[2] = (uint8_t)(app->count >> 16);
+ *         buf[3] = (uint8_t)(app->count >> 24);
+ *         return 4;                                   // bytes produced
+ *     }
+ *     return -1;                                      // unknown request -> STALL
+ * }
+ *
+ * usbip_device_on_control(dev, 0, vendor_ctrl, &app);   // interface 0
+ * @endcode
+ *
+ * The contract is short: on an IN request fill @c buf and return how many bytes you
+ * produced; on an OUT request read the @c len bytes in @c buf and return anything >= 0;
+ * return a negative value to **STALL**. Stalling an unrecognised request is not a
+ * failure path to avoid - it is how a control endpoint says "no such request", and the
+ * host recovers by itself. Requests reach the handler registered for their
+ * `bInterfaceNumber`; `ifnum` -1 installs the device-level fallback, which also sees
+ * device- and endpoint-recipient requests. ::USB_REQ_TYPE and ::USB_REQ_RECIP decode
+ * `bmRequestType`, and @ref usb_concepts explains SETUP and STALL. On a non-control
+ * endpoint, report a protocol failure by halting the pipe with usbip_ep_stall() instead.
+ *
+ * **Driving it**
+ *
+ * No driver is waiting for a vendor device, so something has to claim it. Your own
+ * @ref host_api "host driver" is the direct route - no kernel, no root, same code on all
+ * three platforms, and what `examples/host/host_drive.c` does to `vendor_device`:
+ *
+ * @code{.c}
+ * usbip_host_handle *h = usbip_host_open_vid_pid(ctx, 0x1209, 0x0004);
+ *
+ * usbip_host_control_transfer(h, 0x40, VREQ_SET_LED, 1, 0, NULL, 0, 1000);  // OUT|vendor|device
+ *
+ * int n;
+ * usbip_host_bulk_transfer(h, 0x01, (uint8_t *)"hello", 5, &n, 1000);       // OUT
+ * uint8_t rx[64];
+ * usbip_host_bulk_transfer(h, 0x81, rx, sizeof(rx), &n, 1000);               // IN -> "hello"
+ * @endcode
+ *
+ *
+ * **WebUSB - open it from a browser**
+ *
+ * WebUSB lets a page served over `https` (or `http://localhost`) open a vendor device
+ * directly, once the user has picked it from a chooser. Per the spec the device has to
+ * advertise a **BOS platform-capability descriptor** identifying itself as WebUSB and
+ * answer a **vendor GET_URL request** with its landing page. The BOS belongs to the
+ * device rather than to any interface, so both are core calls:
+ *
+ * @code{.c}
+ * usbip_device_enable_webusb(dev, 0x22, "https://example.com/app");
+ * usbip_device_enable_winusb(dev, NULL);   // Chrome on Windows needs WinUSB bound
+ * @endcode
+ *
+ * Everything else is the vendor device from the top of this page, unchanged -
+ * `examples/device/webusb_device.c` is that bulk loopback plus these two lines. Three
+ * things to get right:
+ *
+ * - **Keep the vendor code clear of `0x20`/`0x21`**, the bRequest values the Microsoft
+ *   OS descriptors use, or a device advertising both answers one mechanism's request
+ *   from the other's handler. The example uses `0x22`.
+ * - **A `bcdUSB` of `0x0210` or higher** is what makes a host fetch the BOS at all;
+ *   both `enable_` calls bump it for you.
+ * - **Chrome on Windows only opens a device whose interface has a driver bound**, hence
+ *   the WinUSB line. On Linux nothing needs to bind, but the browser still needs
+ *   permission to open the device (a `udev` rule, or a user with access).
+ *
+ * The page side is then plain WebUSB, with no idea the device is virtual:
+ *
+ * @code{.js}
+ * const dev = await navigator.usb.requestDevice({filters: [{vendorId: 0x1209}]});
+ * await dev.open();
+ * await dev.selectConfiguration(1);
+ * await dev.claimInterface(0);
+ * await dev.transferOut(1, new TextEncoder().encode("hi"));
+ * const r = await dev.transferIn(1, 64);      // -> "HI" (echoed, case swapped)
+ * @endcode
+ *
+ * `requestDevice()` has to come from a real user gesture, which is the one step that
+ * cannot be scripted in a test.
+ *
+ */
